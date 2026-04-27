@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Prospect {
+  id                  Int                    @id @default(autoincrement())
+  instagramUsername   String                 @unique
+  profileUrl          String?
+  artistName          String?
+  city                String?
+  state               String?
+  followersCount      Int?
+  followingCount      Int?
+  bioText             String?
+  category            String                 @default("unknown")
+  servicesDetected    String?
+  hasWebsite          Boolean                @default(false)
+  websiteUrl          String?
+  websiteQualityScore Int                    @default(0)
+  profileQualityScore Int                    @default(0)
+  source              String?
+  status              String                 @default("not_contacted")
+  interestScore       Int                    @default(0)
+  notes               String?
+  firstMessageSentAt  DateTime?
+  firstReplyAt        DateTime?
+  replyDelayMinutes   Int?
+  lastMessageAt       DateTime?
+  lastSeenAt          DateTime?
+  seenWithoutReplyCount Int                  @default(0)
+  followupAttempts    Int                    @default(0)
+  lastWebhookEventAt  DateTime?
+  nextFollowupAt      DateTime?
+  instagramUserId     String?
+  instagramPageId     String?
+  externalThreadId    String?
+  archivedAt          DateTime?
+  campaignId          Int?
+  campaign            Campaign?              @relation(fields: [campaignId], references: [id])
+  messages            OutreachMessage[]
+  analyses            ConversationAnalysis[]
+  followups           Followup[]
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+}
+
+model OutreachMessage {
+  id                 Int              @id @default(autoincrement())
+  prospectId         Int
+  prospect           Prospect         @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  direction          String
+  channel            String           @default("instagram")
+  messageText        String
+  sentOrReceivedAt   DateTime
+  isFirstMessage     Boolean          @default(false)
+  isFirstReply       Boolean          @default(false)
+  aiGenerated        Boolean          @default(false)
+  externalMessageId  String?
+  seenAt             DateTime?
+  rawPayload         String?
+  createdAt          DateTime         @default(now())
+}
+
+model WebhookEvent {
+  id                Int      @id @default(autoincrement())
+  eventType         String
+  field             String?
+  senderId          String?
+  recipientId       String?
+  externalMessageId String?
+  processedStatus   String   @default("received")
+  payload           String
+  createdAt         DateTime @default(now())
+}
+
+model ConversationAnalysis {
+  id                      Int      @id @default(autoincrement())
+  prospectId              Int
+  prospect                Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  stage                   String?
+  prospectMood            String?
+  painConfirmed           Boolean  @default(false)
+  painType                String?
+  interestScore           Int      @default(0)
+  objection               String?
+  askedPrice              Boolean  @default(false)
+  askedDemo               Boolean  @default(false)
+  shouldUseReplyDelayHook Boolean  @default(false)
+  suggestedReply          String?
+  alternativeReply        String?
+  nextAction              String?
+  marketInsight           String?
+  rawJson                 String?
+  createdAt               DateTime @default(now())
+}
+
+model Campaign {
+  id               Int        @id @default(autoincrement())
+  campaignName     String
+  openingMessage   String?
+  positioningAngle String?
+  targetCity       String?
+  targetCategory   String?
+  betaPrice        Int        @default(499)
+  startedAt        DateTime?
+  endedAt          DateTime?
+  notes            String?
+  prospects        Prospect[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+model Followup {
+  id               Int            @id @default(autoincrement())
+  prospectId       Int
+  prospect         Prospect       @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  followupAt       DateTime
+  followupReason   String?
+  suggestedMessage String?
+  status           String   @default("pending")
+  completedAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
